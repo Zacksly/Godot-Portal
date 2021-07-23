@@ -1,6 +1,6 @@
 extends ClippedCamera
 
-onready var water = get_node("../../../CanvasLayer/Water")
+#onready var water = get_node("../../../CanvasLayer/Water")
 
 const third_person_distance = 20
 onready var _player = $"../../.."
@@ -20,19 +20,19 @@ func _process(delta):
 		else:
 			$"..".translation.z = 0
 
-func _on_area_entered(area):
-	if area is Water:
-		water_entered += 1
-		if water_entered > 0:
-			_player.water_is_at_head = true
-			water.visible = true
-			AudioServer.set_bus_effect_enabled(0, 1, true)
+#func _on_area_entered(area):
+#	if area is Water:
+#		water_entered += 1
+#		if water_entered > 0:
+#			_player.water_is_at_head = true
+#			water.visible = true
+#			AudioServer.set_bus_effect_enabled(0, 1, true)
 
 
-func _on_area_exited(area):
-	if area is Water:
-		water_entered -= 1
-		if water_entered == 0:
-			_player.water_is_at_head = false
-			water.visible = false
-			AudioServer.set_bus_effect_enabled(0, 1, false)
+#func _on_area_exited(area):
+#	if area is Water:
+#		water_entered -= 1
+#		if water_entered == 0:
+#			_player.water_is_at_head = false
+#			water.visible = false
+#			AudioServer.set_bus_effect_enabled(0, 1, false)

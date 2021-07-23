@@ -2,7 +2,7 @@
 
 [sub_resource type="Shader" id=1]
 code = "shader_type spatial;
-render_mode unshaded;//, cull_disabled;
+render_mode unshaded; //, cull_disabled;
 uniform vec4 modulate : hint_color;
 uniform sampler2D overlay : hint_albedo;
 uniform sampler2D texture_albedo : hint_albedo;

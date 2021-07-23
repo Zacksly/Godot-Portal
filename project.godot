@@ -50,9 +50,7 @@ config/icon="res://icon.png"
 
 [autoload]
 
-MapManager="*res://Scripts/MapManager.gd"
 Audio="*res://Audio/Audio.tscn"
-SfxColor="*res://Audio/SFXColor.gd"
 
 [input]
 

@@ -19,7 +19,7 @@ const water_vertical_swim_speed = 0.7
 const water_h_vel_mult = 0.5
 const water_v_vel_mult = 0.7
 const noclip_hyper_speed = 200
-const gravity_strength = 15
+var gravity_strength = 15
 var water_vel = Vector3.ZERO
 
 var water_was_at_waist = false
@@ -189,7 +189,7 @@ func process_movement(delta):
 		if just_jumped or _player.water_is_at_waist:
 			_player.velocity = _player.move_and_slide(_player.velocity, up, false, 4, 0.785398, false)
 		else:
-			_player.velocity = _player.move_and_slide_with_snap(_player.velocity, Vector3.DOWN * 0.1, up, true, 4, 0.785398, false)
+			_player.velocity = _player.move_and_slide_with_snap(_player.velocity, Vector3.UP * 0.1, up, true, 4, 0.785398, false)
 		
 		touching_ground = _player.is_on_floor()
 		

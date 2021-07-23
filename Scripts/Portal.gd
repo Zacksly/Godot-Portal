@@ -33,14 +33,7 @@ func _ready():
 	$"Viewport/Camera/MeshInstance".material_override = $"Viewport/Camera/MeshInstance".mesh.surface_get_material(0).duplicate()
 	
 func _process(delta):
-	# Set the portal's camera transform to the player's camera relative to the other portal
-	var trans = other_portal.global_transform.inverse() * _player_cam.global_transform
-	# Rotate by 180 degrees around the up axis because the camera should be facing the opposite way (180 degrees) at the other portal
-	trans = trans.rotated(Vector3.UP, PI)
-	$CamTransform.transform = trans
-
-	# Set the size of this portal's viewport to the size of the root viewport
-	$Viewport.size = get_viewport().size
+	_set_portal_cam_pos()
 	
 	# The next two lines are for getting the portal's normal
 	# Theres probably an easier way to get the normal but i dont know how
@@ -64,8 +57,26 @@ func _process(delta):
 			_teleport_to_other_portal(body)
 			if body is Player:
 				Audio.play_player("Portal/Enter")
+				_set_portal_cam_pos()
+
+func _set_portal_cam_pos():
+	# Set the portal's camera transform to the player's camera relative to the other portal
+	var trans = other_portal.global_transform.inverse() * _player_cam.global_transform
+	# Rotate by 180 degrees around the up axis because the camera should be facing the opposite way (180 degrees) at the other portal
+	trans = trans.rotated(Vector3.UP, PI)
+	$CamTransform.transform = trans
+	other_portal.get_node("Viewport/Camera").global_transform = $CamTransform.global_transform
+	
+	# Set Portal Cam Cull Dist
+	var cull_dist = global_transform.origin.distance_to(_player_cam.global_transform.origin)
+	other_portal.get_node("Viewport/Camera").near = cull_dist
+	
+	# Set the size of this portal's viewport to the size of the root viewport
+	$Viewport.size = get_viewport().size
+
 
 func _teleport_to_other_portal(body):
+	
 	# Remove the body from being tracked by the portal
 	var i = tracked_bodies.find(body)
 	tracked_bodies.remove(i)
@@ -75,6 +86,7 @@ func _teleport_to_other_portal(body):
 	var offset = global_transform.inverse() * body.global_transform
 	var trans = other_portal.global_transform * offset.rotated(Vector3.UP, PI)
 	body.global_transform = trans
+	body.global_transform.origin += other_portal.global_transform.basis.z * .025
 	
 	# If the body is the player,
 	# get the difference in rotation of this portal and the other portal
@@ -86,13 +98,19 @@ func _teleport_to_other_portal(body):
 			.rotated(Vector3(1, 0, 0), r.x) \
 			.rotated(Vector3(0, 1, 0), r.y + PI) \
 			.rotated(Vector3(0, 0, 1), r.z)
+		
+		body.motion_blur.cam_pos_prev =  body.player_cam.global_transform.origin
+		body.motion_blur.cam_rot_prev = Quat( body.player_cam.global_transform.basis)
 
 func _on_body_entered(body):
 	# If body enters portal, disable its collision on bit 0
 	# so if the portal is on a wall the player can pass through
 	# but still be able to stand on the portal's collision
 	if body is PhysicsBody:
-		body.set_collision_layer_bit(0, false)
+		if body is Player:
+			body.set_collision_mask_bit(3, false)
+			# Stop body from falling through ground
+			body.controller.gravity = 0
 		
 	# If a body enters portal, it will only start to be tracked for teleportation
 	# if it has a node named CanTeleport as a child
@@ -103,7 +121,11 @@ func _on_body_entered(body):
 func _on_body_exited(body):
 	# If body exits portal, set its collision on bit 0 to be enabled again
 	if body is PhysicsBody:
-		body.set_collision_layer_bit(0, true)
+		if body is Player:
+			body.set_collision_mask_bit(3, true)
+			# Stop body from falling through ground
+			body.controller.gravity = 15
+			body.rotate_blend()
 		
 	# If a body exits portal, it will be removed from being tracked
 	# if it has a CanTelport child node and was already being tracked
@@ -119,7 +141,6 @@ func _on_ClipArea_body_entered(body):
 	# but theres still flickering most of the time so im not sure how much its helping
 	if body.has_node("CanTeleport"):
 		$Meshes/Clip.visible = true
-
 
 func _on_ClipArea_body_exited(body):
 	# If a body that can teleport exits the ClipArea area,
