@@ -34,7 +34,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -6.02208, 1.2631, 3.84637 )
 transform = Transform( 0.769398, -0.22844, 0.596525, 0.147566, 0.972169, 0.181964, -0.621492, -0.051976, 0.781695, -2.48997, 1.69145, -13.9726 )
 
 [node name="B" parent="Portals" instance=ExtResource( 4 )]
-transform = Transform( 0.00856945, 0, -0.999963, 0, 1, 0, 0.999963, 0, 0.00856945, 0.817428, 1.77857, 3.66863 )
+transform = Transform( 0.00856945, 0, -0.999963, 0, 1, 0, 0.999963, 0, 0.00856945, 5.81743, 1.42973, 3.66863 )
 color = Color( 0, 0.764706, 1, 1 )
 
 [node name="MeshInstance" type="MeshInstance" parent="."]

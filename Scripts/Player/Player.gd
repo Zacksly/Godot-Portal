@@ -73,17 +73,17 @@ func _process(delta):
 #				$"../Portals/A".global_transform.origin = pos
 #				$"../Portals/A".rotation = $Head/CameraOffset/Camera.global_transform.basis.get_euler()
 				if normal != Vector3.UP && normal != Vector3.DOWN:
-					$"../Portals/A".look_at_from_position(pos + normal * .25, pos - normal, Vector3.UP )
+					$"../Portals/A".look_at_from_position(pos + normal * .1, pos - normal, Vector3.UP )
 				else:
-					$"../Portals/A".look_at_from_position(pos + normal * .25, pos - normal, player_cam.global_transform.basis.z )
+					$"../Portals/A".look_at_from_position(pos + normal * .1, pos - normal, player_cam.global_transform.basis.z )
 				Audio.play_player("Portal/Shoot")
 			elif just_used_alt:
 #				$"../Portals/B".global_transform.origin = pos
 #				$"../Portals/B".rotation = $Head/CameraOffset/Camera.global_transform.basis.get_euler()
 				if normal != Vector3.UP && normal != Vector3.DOWN:
-					$"../Portals/B".look_at_from_position(pos + normal * .25, pos - normal, Vector3.UP )
+					$"../Portals/B".look_at_from_position(pos + normal * .1, pos - normal, Vector3.UP )
 				else:
-					$"../Portals/B".look_at_from_position(pos + normal * .25, pos - normal, player_cam.global_transform.basis.z )
+					$"../Portals/B".look_at_from_position(pos + normal * .1, pos - normal, player_cam.global_transform.basis.z )
 				Audio.play_player("Portal/Shoot")
 
 func _input(event):

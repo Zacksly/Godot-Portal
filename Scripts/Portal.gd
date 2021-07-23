@@ -68,8 +68,21 @@ func _set_portal_cam_pos():
 	other_portal.get_node("Viewport/Camera").global_transform = $CamTransform.global_transform
 	
 	# Set Portal Cam Cull Dist
+	var pos2d = _player_cam.unproject_position(global_transform.origin)
+	var resolution = get_viewport().get_visible_rect().size
+	var percent = Vector2.ZERO
+	percent.x = clamp(pos2d.x/resolution.x, 0,1) - .5
+	percent.y = clamp(pos2d.y/resolution.y, 0,1) - .5
+	
+	print(pos2d, "    ", resolution, "    " , percent)
+	# We need to change the cull distance based on where on the screen the portal is
+	# This helps minimize clipping issues Still not a 100% fix though.
+	# Godot needs to suppor curved culling planes to truly fix
 	var cull_dist = global_transform.origin.distance_to(_player_cam.global_transform.origin)
-	other_portal.get_node("Viewport/Camera").near = cull_dist
+	var slide = cull_dist * .033
+	var adjustment_factor = lerp(.25, -.7 * slide, abs(percent.x) * 2)
+	print("adjustment_factor: ", adjustment_factor)
+	other_portal.get_node("Viewport/Camera").near = cull_dist + adjustment_factor
 	
 	# Set the size of this portal's viewport to the size of the root viewport
 	$Viewport.size = get_viewport().size
