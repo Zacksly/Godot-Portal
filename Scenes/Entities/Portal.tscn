@@ -52,8 +52,8 @@ extents = Vector3( 1.494, 0.064, 0.05 )
 [sub_resource type="BoxShape" id=11]
 extents = Vector3( 0.889, 1.54, 0.212636 )
 
-[sub_resource type="BoxShape" id=13]
-extents = Vector3( 0.889, 1.54, 0.2 )
+[sub_resource type="BoxShape" id=12]
+extents = Vector3( 0.889, 1.54, 0.05 )
 
 [node name="Portal" type="Spatial"]
 script = ExtResource( 1 )
@@ -153,7 +153,7 @@ gravity = 0.0
 collision_mask = 9
 
 [node name="CollisionShape" type="CollisionShape" parent="PortalArea"]
-shape = SubResource( 13 )
+shape = SubResource( 12 )
 
 [node name="Label" type="Label" parent="."]
 margin_right = 40.0

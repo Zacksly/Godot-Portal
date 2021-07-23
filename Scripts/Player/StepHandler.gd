@@ -22,7 +22,6 @@ func init(player: Spatial, feet: Spatial):
 	_feet = feet
 
 func _just_landed(landing_type):
-	print(landing_type)
 	if landing_type == "SOFT":
 		pass
 	elif landing_type == "HARD":

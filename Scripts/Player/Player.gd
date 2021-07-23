@@ -53,7 +53,7 @@ func _process(delta):
 		controller.process(delta)
 		
 	var rot_diff = Vector3.ZERO - rotation
-	if abs(rot_diff.x) > 0.01 or abs(rot_diff.z) > 0.01:
+	if abs(rot_diff.x) > 0.05 or abs(rot_diff.z) > 0.05:
 		rotation += Vector3(1, 0, 1) * rot_diff.sign() * delta * rot_speed
 	else:
 		rotation += Vector3(1, 0, 1) * rot_diff
@@ -62,24 +62,17 @@ func _process(delta):
 	var just_used_alt = Input.is_action_just_pressed("use_alt")
 	
 	if just_used or just_used_alt:
-#		var d = _portal_ray.to_global(_portal_ray.cast_to) - _portal_ray.to_global(Vector3.ZERO)
-#		d = d.normalized() * 3
-#		var pos = $Head.global_transform.origin + d
 		if _portal_ray.is_colliding():
 			var pos = _portal_ray.get_collision_point()
 			var normal = _portal_ray.get_collision_normal()
 			printt(pos, normal)
 			if just_used:
-#				$"../Portals/A".global_transform.origin = pos
-#				$"../Portals/A".rotation = $Head/CameraOffset/Camera.global_transform.basis.get_euler()
 				if normal != Vector3.UP && normal != Vector3.DOWN:
 					$"../Portals/A".look_at_from_position(pos + normal * .1, pos - normal, Vector3.UP )
 				else:
 					$"../Portals/A".look_at_from_position(pos + normal * .1, pos - normal, player_cam.global_transform.basis.z )
 				Audio.play_player("Portal/Shoot")
 			elif just_used_alt:
-#				$"../Portals/B".global_transform.origin = pos
-#				$"../Portals/B".rotation = $Head/CameraOffset/Camera.global_transform.basis.get_euler()
 				if normal != Vector3.UP && normal != Vector3.DOWN:
 					$"../Portals/B".look_at_from_position(pos + normal * .1, pos - normal, Vector3.UP )
 				else:
@@ -150,23 +143,20 @@ func hurt(amount: int, origin: Vector3):
 
 func rotate_blend():
 	if rotation_blending:
-		print("already blending")
 		return
 		
-	print("blending")
 	rotation_blending = true
 	
 #	yield(get_tree().create_timer(.25), "timeout")
-	
+	rot_speed = .1
 	var tween = Tween.new()
 	add_child(tween)
 	tween.interpolate_property(self, "rot_speed", 0.1, 5.0, 0.5,
-		Tween.TRANS_LINEAR, Tween.EASE_IN_OUT, .2)
+		Tween.TRANS_LINEAR, Tween.TRANS_LINEAR, .1)
 	tween.connect("tween_all_completed", self, "rot_blend_complete")
-#	tween.connect("tween_completed", tween, "queue_free")
+	tween.connect("tween_all_completed", tween, "queue_free")
 	tween.start()
 
 func rot_blend_complete():
-	print("yeet")
 	rotation_blending = false;
-	rot_speed = .1
+#	rot_speed = .1

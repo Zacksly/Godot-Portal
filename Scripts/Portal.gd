@@ -74,14 +74,12 @@ func _set_portal_cam_pos():
 	percent.x = clamp(pos2d.x/resolution.x, 0,1) - .5
 	percent.y = clamp(pos2d.y/resolution.y, 0,1) - .5
 	
-	print(pos2d, "    ", resolution, "    " , percent)
 	# We need to change the cull distance based on where on the screen the portal is
 	# This helps minimize clipping issues Still not a 100% fix though.
 	# Godot needs to suppor curved culling planes to truly fix
 	var cull_dist = global_transform.origin.distance_to(_player_cam.global_transform.origin)
 	var slide = cull_dist * .033
 	var adjustment_factor = lerp(.25, -.7 * slide, abs(percent.x) * 2)
-	print("adjustment_factor: ", adjustment_factor)
 	other_portal.get_node("Viewport/Camera").near = cull_dist + adjustment_factor
 	
 	# Set the size of this portal's viewport to the size of the root viewport
@@ -93,7 +91,10 @@ func _teleport_to_other_portal(body):
 	# Remove the body from being tracked by the portal
 	var i = tracked_bodies.find(body)
 	tracked_bodies.remove(i)
-
+	if body is Player:
+		if body.rotation_blending:
+			return
+		
 	# Set the body's position to be at the other portal and rotated 180 degrees
 	# so that the player is facing away from the portal
 	var offset = global_transform.inverse() * body.global_transform
@@ -111,7 +112,8 @@ func _teleport_to_other_portal(body):
 			.rotated(Vector3(1, 0, 0), r.x) \
 			.rotated(Vector3(0, 1, 0), r.y + PI) \
 			.rotated(Vector3(0, 0, 1), r.z)
-		
+		body.last_velocity = body.velocity
+		body.last_velocity = body.velocity.length() * global_transform.basis.z
 		body.motion_blur.cam_pos_prev =  body.player_cam.global_transform.origin
 		body.motion_blur.cam_rot_prev = Quat( body.player_cam.global_transform.basis)
 
@@ -119,11 +121,16 @@ func _on_body_entered(body):
 	# If body enters portal, disable its collision on bit 0
 	# so if the portal is on a wall the player can pass through
 	# but still be able to stand on the portal's collision
+	var dot = Vector3.UP.dot(global_transform.basis.z)
+	print("dot: ", dot)
+	
 	if body is PhysicsBody:
 		if body is Player:
 			body.set_collision_mask_bit(3, false)
-			# Stop body from falling through ground
-			body.controller.gravity = 0
+			# Only disable gravity if portal is on the wall
+			if dot < .8 && dot > -.5 :
+				# Stop body from falling through ground
+				body.controller.gravity = 0
 		
 	# If a body enters portal, it will only start to be tracked for teleportation
 	# if it has a node named CanTeleport as a child
