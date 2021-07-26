@@ -5,12 +5,20 @@ export var color = Color.white
 onready var _player_cam = get_tree().get_nodes_in_group("player_cam")[0] as Camera
 onready var _player_cam_ray = get_tree().get_nodes_in_group("player_cam_ray")[0] as RayCast
 onready var _anim_player := $AnimationPlayer
-onready var _particles = preload("res://Scenes/FX/PortalParticles.tscn")
+onready var _particles_success = preload("res://Scenes/FX/PortalParticlesSuccess.tscn")
+onready var _particles_fail = preload("res://Scenes/FX/PortalParticlesFail.tscn")
 onready var ring_particles := $CPURingParticles as CPUParticles
 var other_portal
 var other_portal_cam
 var placed_on_floor_or_ceiling
 var tracked_bodies = []
+
+var portal_placement_state = "success"
+var portals_linked = false
+onready var _side_raycasts = $SideRaycasts.get_children()
+onready var _back_raycasts = $BackRaycasts.get_children()
+
+onready var portal_material
 
 func _ready():
 	# Find the other portal node and its camera
@@ -30,10 +38,11 @@ func _ready():
 	overlay_tex.create_from_image(overlay_img, 1)
 	$Meshes/Front.material_override.set_shader_param("overlay", overlay_tex)
 	$Meshes/Front.material_override.set_shader_param("modulate", color)
+	portal_material = $Meshes/Front.material_override
 	
 	# Set color of camera meshes used for debugging
-	$"Viewport/Camera/MeshInstance".mesh.surface_get_material(0).set_shader_param("albedo_color", color)
-	$"Viewport/Camera/MeshInstance".material_override = $"Viewport/Camera/MeshInstance".mesh.surface_get_material(0).duplicate()
+	$"Viewport/Camera/DebugMesh".mesh.surface_get_material(0).set_shader_param("albedo_color", color)
+	$"Viewport/Camera/DebugMesh".material_override = $"Viewport/Camera/DebugMesh".mesh.surface_get_material(0).duplicate()
 	
 	# Set Color of Portal Particles
 #	var temp_mat = ring_particles.mesh.surface_get_material(0).duplicate()
@@ -42,33 +51,55 @@ func _ready():
 #	ring_particles.mesh.surface_set_material(0, temp_mat)
 	
 func _process(delta):
+	portals_linked = true if (portal_placement_state == "success" && other_portal.portal_placement_state == "success") else false
+
 	_set_portal_cam_pos()
+	
+	var valid = true
+	if portal_placement_state == "testing":
+		for raycast in _side_raycasts:
+			if raycast is RayCast:
+				if raycast.is_colliding():
+					valid = false
+		
+		for raycast in _back_raycasts:
+			if raycast is RayCast:
+				if !raycast.is_colliding():
+					print("didn hit")
+					valid = false
+	
+		if !valid:
+			portal_placement_state = "failed"
+			remove_portal()
+
+		
 	
 	# The next two lines are for getting the portal's normal
 	# Theres probably an easier way to get the normal but i dont know how
 	var rot = global_transform.basis.get_euler()
 	var normal = Vector3(0, 0, 1).rotated(Vector3(1, 0, 0), rot.x).rotated(Vector3(0, 1, 0), rot.y).rotated(Vector3(0, 0, 1), rot.z)
 	
-	# Loop through all tracked bodies
-	for body in tracked_bodies:
-		# Get the direction from the front face of the portal to the body
-		var body_dir = $Meshes/Front.global_transform.origin - body.global_transform.origin
-		
-		# If the body is a player,
-		# then get the direction of the front face of the portal to the player's camera rather than the player itself
-		if body is Player:
-			body_dir = $Meshes/Front.global_transform.origin - _player_cam.global_transform.origin
+	if portal_placement_state == "success" && other_portal.portal_placement_state == "success":
+		# Loop through all tracked bodies
+		for body in tracked_bodies:
+			# Get the direction from the front face of the portal to the body
+			var body_dir = $Meshes/Front.global_transform.origin - body.global_transform.origin
 			
-		# If the angle between the direction to the body and
-		# the portal's normal is < 90 degrees (the body is behind the portal),
-		# then teleport the body to the other portal and play the portal enter sfx at the player
-		if normal.dot(body_dir) > 0:
-			_teleport_to_other_portal(body)
+			# If the body is a player,
+			# then get the direction of the front face of the portal to the player's camera rather than the player itself
 			if body is Player:
-				Audio.play_player("Portal/Enter")
-				_set_portal_cam_pos()
-		else:
-			body.global_transform.origin += global_transform.basis.z * .5 * delta
+				body_dir = $Meshes/Front.global_transform.origin - _player_cam.global_transform.origin
+				
+			# If the angle between the direction to the body and
+			# the portal's normal is < 90 degrees (the body is behind the portal),
+			# then teleport the body to the other portal and play the portal enter sfx at the player
+			if normal.dot(body_dir) > 0:
+				_teleport_to_other_portal(body)
+				if body is Player:
+					Audio.play_player("Portal/Enter")
+					_set_portal_cam_pos()
+			else:
+				body.global_transform.origin += global_transform.basis.z * .5 * delta
 
 func _set_portal_cam_pos():
 	# Set the portal's camera transform to the player's camera relative to the other portal
@@ -133,6 +164,10 @@ func _teleport_to_other_portal(body):
 		body.motion_blur.cam_rot_prev = Quat( body.player_cam.global_transform.basis)
 
 func _on_body_entered(body):
+	
+	if !portals_linked:
+		return
+		
 	# If body enters portal, disable its collision on bit 0
 	# so if the portal is on a wall the player can pass through
 	# but still be able to stand on the portal's collision
@@ -168,6 +203,8 @@ func _on_body_exited(body):
 			tracked_bodies.remove(i)
 
 func _on_ClipArea_body_entered(body):
+	if !portals_linked:
+		return
 	# If a body that can teleport enters the ClipArea area,
 	# then make the inside meshes of the portal be visible
 	# This helps with flickering when entering portals,
@@ -182,6 +219,15 @@ func _on_ClipArea_body_exited(body):
 		$Meshes/Clip.visible = false
 		
 func place_portal(pos, normal):
+	other_portal._anim_player.play("portal_fade_out")
+	portal_material.set_shader_param("mix_amount", 1)
+#	portal_material.set_shader_param("active", true)
+#	other_portal.portal_material.set_shader_param("active", true)
+	
+#	scale = Vector3.ONE * .01
+	$Meshes/Front.scale = Vector3.ZERO
+	$SideRaycasts.scale = Vector3(0,0,1)
+	portal_placement_state = "testing"
 	# Actual Placement Code -----------------------------------------------------------------------
 	if normal != Vector3.UP && normal != Vector3.DOWN:
 		look_at_from_position(pos + normal * .1, pos - normal, Vector3.UP )
@@ -189,32 +235,43 @@ func place_portal(pos, normal):
 		look_at_from_position(pos + normal * .1, pos - normal, _player_cam.global_transform.basis.z )
 	
 	# Change colliders if placed on floor or ceiling
-	var dot = Vector3.UP.dot(global_transform.basis.z)
+	var dot = Vector3.UP.dot(normal)
+	print("dot: ", dot)
 	if dot < .8 && dot > -.5:
 		placed_on_floor_or_ceiling = false
-
-		for collider in $WallColliders.get_children():
-			if collider is CollisionShape:
-				collider.disabled = false
-		for collider in $NonWallColliders.get_children():
-			if collider is CollisionShape:
-				collider.disabled = true
 	else:
 		placed_on_floor_or_ceiling = true
-		
-		for collider in $WallColliders.get_children():
-			if collider is CollisionShape:
-				collider.disabled = true
-		for collider in $NonWallColliders.get_children():
-			if collider is CollisionShape:
-				collider.disabled = false
+	
+	enable_border_colliders()
 	# Animation ------------------------------------------------------------------------------------
 	_anim_player.stop()
 	_anim_player.play("portal_open")
 	
+	create_portal_fx(_particles_success)
+		
 	ring_particles.restart()
+		
+func remove_portal():
+	# Animation ------------------------------------------------------------------------------------
+	var percentage_complete = _anim_player.current_animation_position/_anim_player.current_animation_length
+	print(percentage_complete)
+	_anim_player.stop()
+	_anim_player.play("portal_close")
+	_anim_player.seek((.2 * percentage_complete), true)
 	
-	var instance = _particles.instance()
+	if portals_linked:
+		other_portal._anim_player.play("portal_fade_out")
+	
+	ring_particles.emitting = false
+	
+	create_portal_fx(_particles_fail)
+	
+	# Disable Colliders for failed portal
+	disable_border_colliders()
+	other_portal.disable_border_colliders()
+	
+func create_portal_fx(effect):
+	var instance = effect.instance()
 	get_tree().current_scene.add_child(instance)
 	instance.global_transform = global_transform
 	
@@ -233,4 +290,28 @@ func place_portal(pos, normal):
 	
 	# Start FX
 	instance.emitting = true
+	
+func portal_placed_successfully():
+	portal_placement_state = "success"
+	if (portal_placement_state == "success" && other_portal.portal_placement_state == "success"):
+		other_portal._anim_player.play("portal_fade_in")
+		_anim_player.play("portal_fade_in")
+		ring_particles.emitting = true
+#	portal_material.set_shader_param("active", true)
+#	other_portal.portal_material.set_shader_param("active", true)
 
+func disable_border_colliders():
+	for collider in $WallColliders.get_children():
+			if collider is CollisionShape:
+				collider.disabled = true
+	for collider in $NonWallColliders.get_children():
+		if collider is CollisionShape:
+			collider.disabled = true
+
+func enable_border_colliders():
+	for collider in $WallColliders.get_children():
+		if collider is CollisionShape:
+			collider.disabled = placed_on_floor_or_ceiling
+	for collider in $NonWallColliders.get_children():
+		if collider is CollisionShape:
+			collider.disabled = !placed_on_floor_or_ceiling
