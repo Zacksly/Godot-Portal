@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=20 format=2]
 
 [ext_resource path="res://Scripts/Portal.gd" type="Script" id=1]
 [ext_resource path="res://Materials/Portal.tres" type="Material" id=2]
@@ -44,16 +44,50 @@ radius = 0.2
 height = 0.4
 
 [sub_resource type="BoxShape" id=9]
-extents = Vector3( 0.866, 0.064, 0.025 )
+extents = Vector3( 0.866, 0.15, 0.025 )
 
 [sub_resource type="BoxShape" id=10]
-extents = Vector3( 1.494, 0.064, 0.05 )
+extents = Vector3( 1.494, 0.064, 0.025 )
+
+[sub_resource type="BoxShape" id=14]
+extents = Vector3( 0.866, 1.53228, 0.025 )
 
 [sub_resource type="BoxShape" id=11]
-extents = Vector3( 0.889, 1.54, 0.212636 )
+extents = Vector3( 0.889, 1.54, 0.15 )
 
 [sub_resource type="BoxShape" id=12]
-extents = Vector3( 0.889, 1.54, 0.05 )
+extents = Vector3( 0.889, 1.54, 0.01 )
+
+[sub_resource type="Animation" id=13]
+resource_name = "portal_open"
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.3 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 1, 1, 1 ) ]
+}
+
+[sub_resource type="SpatialMaterial" id=18]
+flags_transparent = true
+flags_unshaded = true
+vertex_color_use_as_albedo = true
+params_billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id=16]
+material = SubResource( 18 )
+size = Vector2( 0.16, 0.16 )
+
+[sub_resource type="Curve" id=17]
+_data = [ Vector2( 0.00581396, 0.978409 ), 0.0, 0.0, 0, 0, Vector2( 1, 0.0329546 ), -1.88939, 0.0, 0, 0 ]
 
 [node name="Portal" type="Spatial"]
 script = ExtResource( 1 )
@@ -69,6 +103,7 @@ material/0 = null
 
 [node name="Back" type="MeshInstance" parent="Meshes/Clip"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.4 )
+visible = false
 mesh = SubResource( 1 )
 material/0 = null
 
@@ -107,7 +142,7 @@ remote_path = NodePath("../Viewport/Camera")
 
 [node name="Viewport" type="Viewport" parent="."]
 size = Vector2( 5, 5 )
-fxaa = true
+hdr = false
 
 [node name="Camera" type="Camera" parent="Viewport"]
 transform = Transform( -1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, 0 )
@@ -118,29 +153,56 @@ visible = false
 mesh = SubResource( 8 )
 material/0 = null
 
-[node name="StaticBody" type="StaticBody" parent="."]
+[node name="WallColliders" type="StaticBody" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.0451585 )
+visible = false
 collision_layer = 5
 collision_mask = 5
 
-[node name="CollisionShape" type="CollisionShape" parent="StaticBody"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.50015, 0 )
+[node name="BottomFrame" type="CollisionShape" parent="WallColliders"]
+transform = Transform( 1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, -1.53781, 0.143573 )
 shape = SubResource( 9 )
 
-[node name="CollisionShape4" type="CollisionShape" parent="StaticBody"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.66802, 0 )
+[node name="TopFrame" type="CollisionShape" parent="WallColliders"]
+transform = Transform( 1, 0, 0, 0, 0.707107, -0.707107, 0, 0.707107, 0.707107, 0, 1.70568, 0.14015 )
 shape = SubResource( 9 )
 
-[node name="CollisionShape5" type="CollisionShape" parent="StaticBody"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.66802, 0 )
-shape = SubResource( 9 )
-
-[node name="CollisionShape2" type="CollisionShape" parent="StaticBody"]
-transform = Transform( -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, -0.911693, 0.0893495, 0 )
+[node name="LeftFrame" type="CollisionShape" parent="WallColliders"]
+transform = Transform( -1.15202e-07, -0.707107, 0.707107, 1, -1.62921e-07, 0, 1.15202e-07, 0.707107, 0.707107, -0.911693, 0.0893495, 0 )
 shape = SubResource( 10 )
 
-[node name="CollisionShape3" type="CollisionShape" parent="StaticBody"]
-transform = Transform( -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 0.92039, 0, 0 )
+[node name="RightFrame" type="CollisionShape" parent="WallColliders"]
+transform = Transform( -1.15202e-07, -0.707107, -0.707107, 1, -1.62921e-07, 0, -1.15202e-07, -0.707107, 0.707107, 0.92039, 0, 0 )
 shape = SubResource( 10 )
+
+[node name="BackWall" type="CollisionShape" parent="WallColliders"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.551097 )
+shape = SubResource( 14 )
+
+[node name="NonWallColliders" type="StaticBody" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.0451585 )
+collision_layer = 5
+collision_mask = 5
+
+[node name="BottomFrame" type="CollisionShape" parent="NonWallColliders"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, -0.0399289 )
+shape = SubResource( 9 )
+
+[node name="TopFrame" type="CollisionShape" parent="NonWallColliders"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.668, -0.0399289 )
+shape = SubResource( 9 )
+
+[node name="LeftFrame" type="CollisionShape" parent="NonWallColliders"]
+transform = Transform( -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0, 0, 1, -0.911693, 0.0893495, -0.0399289 )
+shape = SubResource( 10 )
+
+[node name="RightFrame" type="CollisionShape" parent="NonWallColliders"]
+transform = Transform( -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0, 0, 1, 0.92039, 0, -0.0399289 )
+shape = SubResource( 10 )
+
+[node name="BackWall" type="CollisionShape" parent="NonWallColliders"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.00364 )
+shape = SubResource( 14 )
 
 [node name="ClipArea" type="Area" parent="."]
 
@@ -162,6 +224,28 @@ text = "N/A"
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+autoplay = "portal_open"
+anims/portal_open = SubResource( 13 )
+
+[node name="CPURingParticles" type="CPUParticles" parent="."]
+transform = Transform( -2.91919e-08, 0.728975, 0, -0.667834, -3.18645e-08, 0, 0, 0, 0.667834, 0, 0, 0.0721928 )
+amount = 15
+lifetime = 0.5
+preprocess = 0.01
+lifetime_randomness = 0.2
+local_coords = false
+mesh = SubResource( 16 )
+emission_shape = 3
+emission_points = PoolVector3Array( 0, 1, 0, -0.39, 0.981, 0, -0.765, 0.924, 0, -1.111, 0.831, 0, -1.414, 0.707, 0, -1.663, 0.556, 0, -1.848, 0.383, 0, -1.962, 0.195, 0, -2, 0, 0, -1.962, -0.195, 0, -1.848, -0.383, 0, -1.663, -0.556, 0, -1.414, -0.707, 0, -1.111, -0.831, 0, -0.765, -0.924, 0, -0.39, -0.981, 0, 0, -1, 0, 0.39, -0.981, 0, 0.765, -0.924, 0, 1.111, -0.831, 0, 1.414, -0.707, 0, 1.663, -0.556, 0, 1.848, -0.383, 0, 1.962, -0.195, 0, 2, 0, 0, 1.962, 0.195, 0, 1.848, 0.383, 0, 1.663, 0.556, 0, 1.414, 0.707, 0, 1.111, 0.831, 0, 0.765, 0.924, 0, 0.39, 0.981, 0 )
+direction = Vector3( 0, 0, 0 )
+spread = 90.0
+gravity = Vector3( 0, -0.5, 0 )
+initial_velocity = 1.0
+scale_amount = 0.6
+scale_amount_curve = SubResource( 17 )
+color = Color( 1, 1, 1, 0.294118 )
 
 [connection signal="body_entered" from="ClipArea" to="." method="_on_ClipArea_body_entered"]
 [connection signal="body_exited" from="ClipArea" to="." method="_on_ClipArea_body_exited"]

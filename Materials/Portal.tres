@@ -9,6 +9,10 @@ uniform sampler2D texture_albedo : hint_albedo;
 
 void fragment() {
 	vec2 base_uv = SCREEN_UV;
+	
+	vec2 scale_vec2 = vec2(.5, .5);
+	vec2 scaled_uv = (SCREEN_UV - scale_vec2) * .8 + scale_vec2;
+	
 	vec4 view = texture(texture_albedo, base_uv);
 	
 	vec2 outline_uv = UV;
@@ -26,12 +30,12 @@ void fragment() {
 
 [sub_resource type="Gradient" id=2]
 offsets = PoolRealArray( 0 )
-colors = PoolColorArray( 1, 0, 0, 1 )
+colors = PoolColorArray( 1, 1, 1, 1 )
 
 [sub_resource type="GradientTexture" id=3]
 gradient = SubResource( 2 )
 
 [resource]
 shader = SubResource( 1 )
-shader_param/modulate = Color( 1, 0.352941, 0, 1 )
+shader_param/modulate = Color( 1, 1, 1, 1 )
 shader_param/overlay = SubResource( 3 )

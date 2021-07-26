@@ -4,9 +4,12 @@ export var color = Color.white
 
 onready var _player_cam = get_tree().get_nodes_in_group("player_cam")[0] as Camera
 onready var _player_cam_ray = get_tree().get_nodes_in_group("player_cam_ray")[0] as RayCast
+onready var _anim_player := $AnimationPlayer
+onready var _particles = preload("res://Scenes/FX/PortalParticles.tscn")
+onready var ring_particles := $CPURingParticles as CPUParticles
 var other_portal
 var other_portal_cam
-
+var placed_on_floor_or_ceiling
 var tracked_bodies = []
 
 func _ready():
@@ -31,6 +34,12 @@ func _ready():
 	# Set color of camera meshes used for debugging
 	$"Viewport/Camera/MeshInstance".mesh.surface_get_material(0).set_shader_param("albedo_color", color)
 	$"Viewport/Camera/MeshInstance".material_override = $"Viewport/Camera/MeshInstance".mesh.surface_get_material(0).duplicate()
+	
+	# Set Color of Portal Particles
+#	var temp_mat = ring_particles.mesh.surface_get_material(0).duplicate()
+	ring_particles.color = color
+	ring_particles.color.a = .75
+#	ring_particles.mesh.surface_set_material(0, temp_mat)
 	
 func _process(delta):
 	_set_portal_cam_pos()
@@ -58,6 +67,8 @@ func _process(delta):
 			if body is Player:
 				Audio.play_player("Portal/Enter")
 				_set_portal_cam_pos()
+		else:
+			body.global_transform.origin += global_transform.basis.z * .5 * delta
 
 func _set_portal_cam_pos():
 	# Set the portal's camera transform to the player's camera relative to the other portal
@@ -67,21 +78,25 @@ func _set_portal_cam_pos():
 	$CamTransform.transform = trans
 	other_portal.get_node("Viewport/Camera").global_transform = $CamTransform.global_transform
 	
-	# Set Portal Cam Cull Dist
+	# Set Portal Cam Cull Distance
 	var pos2d = _player_cam.unproject_position(global_transform.origin)
 	var resolution = get_viewport().get_visible_rect().size
-	var percent = Vector2.ZERO
-	percent.x = clamp(pos2d.x/resolution.x, 0,1) - .5
-	percent.y = clamp(pos2d.y/resolution.y, 0,1) - .5
+	var screen_pos_percent = Vector2.ZERO
+	screen_pos_percent.x = clamp(pos2d.x/resolution.x, 0,1) - .5
+	screen_pos_percent.y = clamp(pos2d.y/resolution.y, 0,1) - .5
 	
 	# We need to change the cull distance based on where on the screen the portal is
 	# This helps minimize clipping issues Still not a 100% fix though.
 	# Godot needs to suppor curved culling planes to truly fix
 	var cull_dist = global_transform.origin.distance_to(_player_cam.global_transform.origin)
-	var slide = cull_dist * .033
-	var adjustment_factor = lerp(.25, -.7 * slide, abs(percent.x) * 2)
-	other_portal.get_node("Viewport/Camera").near = cull_dist + adjustment_factor
-	
+	if cull_dist > 1:
+		var slide = cull_dist * .033
+		var adjustment_factor_x = lerp(.25, -7 * slide, abs(screen_pos_percent.x) * 2)
+		var adjustment_factor_y = lerp(-1, -2 * slide, abs(screen_pos_percent.y) * 2)
+		var total_adjustment_factor = adjustment_factor_x - (adjustment_factor_y * .2)
+		other_portal.get_node("Viewport/Camera").near = cull_dist + total_adjustment_factor
+	else:
+		other_portal.get_node("Viewport/Camera").near = cull_dist + .25
 	# Set the size of this portal's viewport to the size of the root viewport
 	$Viewport.size = get_viewport().size
 
@@ -92,7 +107,7 @@ func _teleport_to_other_portal(body):
 	var i = tracked_bodies.find(body)
 	tracked_bodies.remove(i)
 	if body is Player:
-		if body.rotation_blending:
+		if body.rot_blend_tween != null:
 			return
 		
 	# Set the body's position to be at the other portal and rotated 180 degrees
@@ -121,14 +136,12 @@ func _on_body_entered(body):
 	# If body enters portal, disable its collision on bit 0
 	# so if the portal is on a wall the player can pass through
 	# but still be able to stand on the portal's collision
-	var dot = Vector3.UP.dot(global_transform.basis.z)
-	print("dot: ", dot)
 	
 	if body is PhysicsBody:
 		if body is Player:
 			body.set_collision_mask_bit(3, false)
 			# Only disable gravity if portal is on the wall
-			if dot < .8 && dot > -.5 :
+			if !placed_on_floor_or_ceiling:
 				# Stop body from falling through ground
 				body.controller.gravity = 0
 		
@@ -167,3 +180,57 @@ func _on_ClipArea_body_exited(body):
 	# then make the inside meshes invisible again
 	if body.has_node("CanTeleport"):
 		$Meshes/Clip.visible = false
+		
+func place_portal(pos, normal):
+	# Actual Placement Code -----------------------------------------------------------------------
+	if normal != Vector3.UP && normal != Vector3.DOWN:
+		look_at_from_position(pos + normal * .1, pos - normal, Vector3.UP )
+	else:
+		look_at_from_position(pos + normal * .1, pos - normal, _player_cam.global_transform.basis.z )
+	
+	# Change colliders if placed on floor or ceiling
+	var dot = Vector3.UP.dot(global_transform.basis.z)
+	if dot < .8 && dot > -.5:
+		placed_on_floor_or_ceiling = false
+
+		for collider in $WallColliders.get_children():
+			if collider is CollisionShape:
+				collider.disabled = false
+		for collider in $NonWallColliders.get_children():
+			if collider is CollisionShape:
+				collider.disabled = true
+	else:
+		placed_on_floor_or_ceiling = true
+		
+		for collider in $WallColliders.get_children():
+			if collider is CollisionShape:
+				collider.disabled = true
+		for collider in $NonWallColliders.get_children():
+			if collider is CollisionShape:
+				collider.disabled = false
+	# Animation ------------------------------------------------------------------------------------
+	_anim_player.stop()
+	_anim_player.play("portal_open")
+	
+	ring_particles.restart()
+	
+	var instance = _particles.instance()
+	get_tree().current_scene.add_child(instance)
+	instance.global_transform = global_transform
+	
+	# Set Color of Portal Particles
+	var temp_mat = instance.process_material.duplicate()
+	temp_mat.color = color
+	temp_mat.color.a = .75
+	instance.process_material = temp_mat
+	
+	# Auto Remove Splash Particles
+	var timer = Timer.new()
+	instance.add_child(timer)
+	timer.set_wait_time(instance.lifetime)
+	timer.connect("timeout", instance,"queue_free") 
+	timer.start()
+	
+	# Start FX
+	instance.emitting = true
+

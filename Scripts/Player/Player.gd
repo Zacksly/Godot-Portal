@@ -29,9 +29,13 @@ var vehicle
 
 var controller = Controller.new()
 var step_handler = StepHandler.new()
-var rot_speed = 1
-var rotation_blending = false
+#var rotation_blending = false
 onready var motion_blur = $Head/CameraOffset/Camera/motion_blur
+
+onready var portal_a = $"../Portals/A"
+onready var portal_b = $"../Portals/B"
+
+var rot_blend_tween = null
 
 func _ready():
 	controller.init(self, $Head, $CollisionShape)
@@ -52,12 +56,6 @@ func _process(delta):
 	if not is_riding:
 		controller.process(delta)
 		
-	var rot_diff = Vector3.ZERO - rotation
-	if abs(rot_diff.x) > 0.05 or abs(rot_diff.z) > 0.05:
-		rotation += Vector3(1, 0, 1) * rot_diff.sign() * delta * rot_speed
-	else:
-		rotation += Vector3(1, 0, 1) * rot_diff
-	
 	var just_used = Input.is_action_just_pressed("use")
 	var just_used_alt = Input.is_action_just_pressed("use_alt")
 	
@@ -65,19 +63,12 @@ func _process(delta):
 		if _portal_ray.is_colliding():
 			var pos = _portal_ray.get_collision_point()
 			var normal = _portal_ray.get_collision_normal()
-			printt(pos, normal)
 			if just_used:
-				if normal != Vector3.UP && normal != Vector3.DOWN:
-					$"../Portals/A".look_at_from_position(pos + normal * .1, pos - normal, Vector3.UP )
-				else:
-					$"../Portals/A".look_at_from_position(pos + normal * .1, pos - normal, player_cam.global_transform.basis.z )
 				Audio.play_player("Portal/Shoot")
+				portal_a.place_portal(pos, normal)
 			elif just_used_alt:
-				if normal != Vector3.UP && normal != Vector3.DOWN:
-					$"../Portals/B".look_at_from_position(pos + normal * .1, pos - normal, Vector3.UP )
-				else:
-					$"../Portals/B".look_at_from_position(pos + normal * .1, pos - normal, player_cam.global_transform.basis.z )
 				Audio.play_player("Portal/Shoot")
+				portal_b.place_portal(pos, normal)
 
 func _input(event):
 	controller.input(event)
@@ -142,21 +133,21 @@ func hurt(amount: int, origin: Vector3):
 #	_health_label.on_hurt()
 
 func rotate_blend():
-	if rotation_blending:
+	
+	if rot_blend_tween != null:
 		return
 		
-	rotation_blending = true
-	
-#	yield(get_tree().create_timer(.25), "timeout")
-	rot_speed = .1
-	var tween = Tween.new()
-	add_child(tween)
-	tween.interpolate_property(self, "rot_speed", 0.1, 5.0, 0.5,
-		Tween.TRANS_LINEAR, Tween.TRANS_LINEAR, .1)
-	tween.connect("tween_all_completed", self, "rot_blend_complete")
-	tween.connect("tween_all_completed", tween, "queue_free")
-	tween.start()
+	rot_blend_tween = Tween.new()
+	add_child(rot_blend_tween)
+
+	rot_blend_tween.interpolate_property(self, "rotation:x", rotation.x, 0, 0.5,
+		Tween.TRANS_LINEAR, Tween.TRANS_LINEAR, .25)
+	rot_blend_tween.interpolate_property(self, "rotation:z", rotation.z, 0, 0.5,
+		Tween.TRANS_LINEAR, Tween.TRANS_LINEAR, .25)
+	rot_blend_tween.connect("tween_all_completed", self, "rot_blend_complete")
+	rot_blend_tween.start()
 
 func rot_blend_complete():
-	rotation_blending = false;
+	rot_blend_tween.queue_free()
+	rot_blend_tween = null
 #	rot_speed = .1
