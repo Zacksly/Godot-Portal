@@ -144,9 +144,9 @@ func rotate_blend():
 	add_child(rot_blend_tween)
 
 	rot_blend_tween.interpolate_property(self, "rotation:x", rotation.x, 0, 0.5,
-		Tween.TRANS_LINEAR, Tween.TRANS_LINEAR, .25)
+		Tween.TRANS_LINEAR, Tween.TRANS_LINEAR, .15)
 	rot_blend_tween.interpolate_property(self, "rotation:z", rotation.z, 0, 0.5,
-		Tween.TRANS_LINEAR, Tween.TRANS_LINEAR, .25)
+		Tween.TRANS_LINEAR, Tween.TRANS_LINEAR, .15)
 	rot_blend_tween.connect("tween_all_completed", self, "rot_blend_complete")
 	rot_blend_tween.start()
 

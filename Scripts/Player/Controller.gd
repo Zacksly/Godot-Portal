@@ -184,8 +184,8 @@ func process_movement(delta):
 		_player.velocity += _player.added_velocity
 		_player.added_velocity = Vector3.ZERO
 				
-		if _player.velocity.y < -15:
-			_player.velocity.y = -15
+		if _player.velocity.y < -33:
+			_player.velocity.y = -33
 			
 		if just_jumped or _player.water_is_at_waist:
 			_player.velocity = _player.move_and_slide(_player.velocity, up, false, 4, 0.785398, false)

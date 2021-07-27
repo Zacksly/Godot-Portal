@@ -220,7 +220,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0 )
 "player_cam",
 ]]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.005, 0, 0 )
-cull_mask = 1048543
+cull_mask = 524255
 current = true
 near = 0.01
 far = 400.0
