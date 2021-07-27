@@ -183,16 +183,17 @@ func process_movement(delta):
 				
 		_player.velocity += _player.added_velocity
 		_player.added_velocity = Vector3.ZERO
-		
-		#_player.velocity = _player.velocity.rotated(Vector3(1, 0, 0), _player.rotation.x).rotated(Vector3(0, 1, 0), _player.rotation.y).rotated(Vector3(0, 0, 1), _player.rotation.z)
-		
+				
+		if _player.velocity.y < -15:
+			_player.velocity.y = -15
+			
 		if just_jumped or _player.water_is_at_waist:
 			_player.velocity = _player.move_and_slide(_player.velocity, up, false, 4, 0.785398, false)
 		else:
-			_player.velocity = _player.move_and_slide_with_snap(_player.velocity, Vector3.UP * 0.1, up, true, 4, 0.785398, false)
+#			_player.velocity = _player.move_and_slide_with_snap(_player.velocity, Vector3.UP * 0.1, up, true, 4, 0.785398, false)
+			_player.velocity = _player.move_and_slide(_player.velocity, up, false, 4, 0.785398, false)
 		
 		touching_ground = _player.is_on_floor()
-		
 		return _player.velocity
 
 func _try_step():
@@ -214,6 +215,7 @@ func _try_step():
 			var col = _player.move_and_collide(Vector3(0, height + 0.2, 0) + test_ray.cast_to.normalized().rotated(Vector3.UP, rot)*0.1, true, true, true)
 			if not col or not col.collider:
 				_player.move_and_collide(Vector3(0, height, 0))
+				
 	for ray in step_rays.get_children():
 		ray.enabled = false
 
@@ -348,7 +350,7 @@ func _ground_move(delta):
 	if wish_jump:
 		_player.velocity.y = jump_speed
 		wish_jump = false
-		
+				
 	ground_wish_dir = wishdir
 
 func _apply_friction(t, delta):

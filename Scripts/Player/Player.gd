@@ -26,6 +26,7 @@ var dead = false
 var look_area: Area
 var is_riding = false
 var vehicle
+var last_pos = Vector3.ZERO
 
 var controller = Controller.new()
 var step_handler = StepHandler.new()
@@ -69,6 +70,8 @@ func _process(delta):
 			elif just_used_alt:
 				Audio.play_player("Portal/Shoot")
 				portal_b.place_portal(pos, normal)
+		
+	last_pos = global_transform.origin
 
 func _input(event):
 	controller.input(event)

@@ -202,11 +202,14 @@ anims/Bob = SubResource( 7 )
 
 [node name="Feet" type="RayCast" parent="StepRays"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0361776, 0 )
+enabled = true
 cast_to = Vector3( 0, 0, -1.2 )
+collision_mask = 8
 
 [node name="Test" type="RayCast" parent="StepRays"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0 )
 cast_to = Vector3( 0, 0, -1.2 )
+collision_mask = 8
 
 [node name="Head" type="Spatial" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0 )
@@ -326,6 +329,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.94158, 0 )
 visible = false
 mesh = SubResource( 14 )
 material/0 = SubResource( 10 )
+
 [connection signal="area_entered" from="Head/CameraOffset/Camera/Area" to="Head/CameraOffset/Camera" method="_on_area_entered"]
 [connection signal="area_exited" from="Head/CameraOffset/Camera/Area" to="Head/CameraOffset/Camera" method="_on_area_exited"]
 [connection signal="area_entered" from="Waist" to="Waist" method="_on_area_entered"]
