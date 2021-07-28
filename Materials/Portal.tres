@@ -11,7 +11,7 @@ gradient = SubResource( 26 )
 [resource]
 shader = ExtResource( 2 )
 shader_param/modulate = Color( 1, 1, 1, 1 )
-shader_param/mix_amount = 1.0
+shader_param/mix_amount = 0.0
 shader_param/deform_amount = 0.5
 shader_param/deform_speed = null
 shader_param/overlay = SubResource( 3 )

@@ -188,10 +188,10 @@ func process_movement(delta):
 			_player.velocity.y = -33
 			
 		if just_jumped or _player.water_is_at_waist:
-			_player.velocity = _player.move_and_slide(_player.velocity, up, false, 4, 0.785398, false)
+			_player.velocity = _player.move_and_slide(_player.velocity, up, false, 4, 0.785398, true)
 		else:
 #			_player.velocity = _player.move_and_slide_with_snap(_player.velocity, Vector3.UP * 0.1, up, true, 4, 0.785398, false)
-			_player.velocity = _player.move_and_slide(_player.velocity, up, false, 4, 0.785398, false)
+			_player.velocity = _player.move_and_slide(_player.velocity, up, false, 4, 0.785398, true)
 		
 		touching_ground = _player.is_on_floor()
 		return _player.velocity
