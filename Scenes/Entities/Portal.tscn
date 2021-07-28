@@ -296,8 +296,6 @@ material/0 = null
 
 [node name="WallColliders" type="StaticBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.0451585 )
-collision_layer = 5
-collision_mask = 5
 
 [node name="BottomFrame" type="CollisionShape" parent="WallColliders"]
 transform = Transform( 1, 0, 0, 0, 0.642788, 0.766045, 0, -0.766045, 0.642788, 0, -1.56284, 0.194063 )
@@ -325,8 +323,6 @@ shape = SubResource( 15 )
 
 [node name="NonWallColliders" type="StaticBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.0451585 )
-collision_layer = 5
-collision_mask = 5
 
 [node name="BottomFrame" type="CollisionShape" parent="NonWallColliders"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, -0.0632155 )

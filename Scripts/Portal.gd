@@ -54,12 +54,11 @@ func _ready():
 	$"Viewport/Camera/DebugMesh".material_override = $"Viewport/Camera/DebugMesh".mesh.surface_get_material(0).duplicate()
 	
 	# Set Color of Portal Particles
-#	var temp_mat = ring_particles.mesh.surface_get_material(0).duplicate()
 	ring_particles.color = color
 	ring_particles.color.a = .75
 	
 	portal_glow.light_color = color
-#	ring_particles.mesh.surface_set_material(0, temp_mat)
+
 	
 func _process(delta):
 	portals_linked = true if (portal_placement_state == "success" && other_portal.portal_placement_state == "success") else false
@@ -113,6 +112,9 @@ func update_portals():
 					_set_portal_cam_pos()
 					if other_portal.use_boost:
 						body.velocity += other_portal.global_transform.basis.z * 5
+				elif body is RigidBody:
+					if other_portal.use_boost:
+						body.linear_velocity += other_portal.global_transform.basis.z * 5
 		else:
 			# Stops players from clipping through after changing portals mid pass
 			body.set_collision_mask_bit(3, true)
@@ -188,7 +190,17 @@ func _teleport_to_other_portal(body):
 		
 		body.motion_blur.cam_pos_prev =  body.player_cam.global_transform.origin
 		body.motion_blur.cam_rot_prev = Quat( body.player_cam.global_transform.basis)
-						
+	elif body is RigidBody:
+		var r = other_portal.global_transform.basis.get_euler() - global_transform.basis.get_euler()
+		body.linear_velocity = body.linear_velocity \
+			.rotated(Vector3(1, 0, 0), r.x) \
+			.rotated(Vector3(0, 1, 0), r.y + PI) \
+			.rotated(Vector3(0, 0, 1), r.z)
+		
+		if use_boost:
+			var speed = body.linear_velocity.length()
+			body.linear_velocity = other_portal.global_transform.basis.z * speed
+			
 func place_portal(pos, normal):
 	
 	if other_portal.portal_placement_state != "testing":	
@@ -332,18 +344,16 @@ func initial_check():
 		var bodies = $PortalArea.get_overlapping_bodies()
 		if bodies.size() > 0:
 			for body in bodies:
-				if body is Player:
+				if body.has_node("CanTeleport"):
 					body.set_collision_mask_bit(3, false)
-					print(body.name, "floor")
 					tracked_bodies.append(body)
 	
 	if !$PortalArea/CeilingCollisionShape.disabled:
 		var bodies = $PortalArea.get_overlapping_bodies()
 		if bodies.size() > 0:
 			for body in bodies:
-				if body is Player:
+				if body.has_node("CanTeleport"):
 					body.set_collision_mask_bit(3, false)
-					print(body.name, "top")
 					tracked_bodies.append(body)
 
 func check_for_portal_between(start_pos, end_pos):
